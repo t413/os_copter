@@ -11,13 +11,13 @@
 
 // this is the struct to save the pid calculation data in.
 typedef struct {
-        int p, i, d;
-        int error;
-        int prev_val;
+	float p, i, d;
+	float error;
+	float prev_val;
 }PID_DATA;
 
 
-int calculate_pid(int incoming_val, int goal_val, PID_DATA*pid);
+float calculate_pid(float incoming_val, float goal_val, PID_DATA*pid);
 
 
 #endif /* PID_H_ */

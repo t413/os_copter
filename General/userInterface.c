@@ -29,14 +29,14 @@ void continuous(void *pvParameters)
 {
 	OSHANDLES *osHandles = (OSHANDLES*)pvParameters;
 
+	setup_PWM_servo();
 	setupPWM(2); //set up P0.7 as PWM2  //setupPWM(5);setupPWM(4);setupPWM(6);
 	write_PWM_servo(2, 1500 );
-
 
 	int yaw0=0,pitch0=0,roll0=0;
 	unsigned char dummy[1] = "";
 	if (i2c_send_byte(0xA6, 0xFE, 0x04) || i2c_send(0xA4,0x00,dummy,0)){ //activate wm+
-		vTaskDelay(400);
+		vTaskDelay(100);
 		unsigned char res = zero_wii_motion_plus(&yaw0,&pitch0,&roll0);
 		rprintf("first motion+ init success. 0values = %i-%i-%i (%i averages)\n",yaw0,pitch0,roll0,res);
 	} else {rprintf("wm+ error, not init-ed.\n");for(;;){vTaskDelay(999999);}}
@@ -44,7 +44,7 @@ void continuous(void *pvParameters)
 	int pitch_integral = 0;
 	unsigned int loop_count = 0;
     unsigned int last_ms = xTaskGetTickCount();
-    PID_DATA servo_yaw;
+    PID_DATA servo_yaw = {.p=0.5, .i=.01, .d=0, .error=0, .prev_val=0};
 	for(;;){ //this is a continuous task.
 		unsigned char data[6] = "";
 		if (i2c_receive(0xA4,0x00,data,6)){
@@ -54,15 +54,16 @@ void continuous(void *pvParameters)
 			unsigned int this_ms = xTaskGetTickCount();
 			pitch_integral += pitch*(this_ms-last_ms); //deg/s * ms = degrees*1000
 			last_ms = this_ms;
-			if (!(loop_count%50))
-				rprintf("decoded : %i %i %i [%d]%s\n", yaw*595/8192, roll*595/8192, pitch*595/8192, pitch_integral*595/8192/1000, (data[4]&1)?"connected":"");
+			//if (!(loop_count%50))
+				//rprintf("decoded : %i %i %i [%d]%s\n", yaw*595/8192, roll*595/8192, pitch*595/8192, pitch_integral*595/8192/1000, (data[4]&1)?"connected":"");
 		} //else rprintf("wm+ error\n");
 
 		//if ((loop_count*3/1000)%2)
 		//	write_PWM(2, ((loop_count*3)%1000)+1000 );
 		//else
 		//	write_PWM(2, (2000 - (loop_count*3)%1000) );
-		write_PWM_servo(2, pitch_integral/1000+1500 );
+		//write_PWM_servo(2, pitch_integral/1000+1500 );
+		write_PWM_servo(2, calculate_pid(pitch_integral/1000, 0, &servo_yaw) + 1500 );
 
 		vTaskDelay(6);
 		loop_count++;
@@ -75,7 +76,7 @@ void uartUI(void *pvParameters)
 	char uartInput[128];
 	
 	vTaskDelay(100);
-	
+	setupPWM(5); write_PWM_servo(5, 1500 );
 	for (;;)
 	{
 		rprintf("tim: "); //print prompt
@@ -92,20 +93,18 @@ void uartUI(void *pvParameters)
 		else if (MATCH(command, "scan")){
 			scan_i2c();
 		}
-		else if (MATCH(command, "led")){
+		/*else if (MATCH(command, "led")){
 			int led = atoi(strtok(NULL, " "));
 			if ((led < 7)&&(led > 0)){
 				int val = atoi(strtok(NULL, ""));
 				write_PWM(led, val );
 				rprintf("wrote %i to LED %i\n",val,led);
 			}
-		}
-		else if (MATCH(command, "leds")){
+		}*/
+		else if (MATCH(command, "servo")){
 			int val2 = atoi(strtok(NULL, ""));
-			for (int tl = 1; tl < 7; tl++){
-				write_PWM(tl, val2 );
-				rprintf("wrote %i to LED %i\n",val2,tl);
-			}
+			write_PWM_servo(5, val2 );
+			rprintf("wrote %i to servo 5\n",val2);
 		}
 
 
@@ -230,7 +229,7 @@ unsigned char zero_wii_motion_plus(int*y,int*p,int*r){
 				successful_reads++;
 			}
 		}
-		vTaskDelay(100);
+		vTaskDelay(10);
 	}
 	*y = calib_yaw0/successful_reads;
 	*p = calib_pitch0/successful_reads;

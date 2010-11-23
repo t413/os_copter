@@ -50,8 +50,8 @@ void setupPWM(unsigned int whichTimer);
  *
  *   the first argument, 10000, sets how long (in µs) the period of the
  */
-#define SERVO_PERIOD 10000
-#define setup_PWM_servo() setup_all_PWM(SERVO_PERIOD,PCLK/SERVO_PERIOD/100)
+#define SERVO_PERIOD 20000
+#define setup_PWM_servo() setup_all_PWM(SERVO_PERIOD,PCLK/1000000)  //PCLK/1000000 => µs scale
 #define write_PWM_servo(chan,val) write_PWM(chan, (val>2000)?2000:(val<1000)?1000:val );
 
 
