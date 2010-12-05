@@ -4,7 +4,6 @@
 
 
 void uartUI(void *pvParameters);
-void continuous(void *pvParameters);
 
 
 #endif /* USERINTERFACE_H_ */

@@ -5,6 +5,7 @@
 #include "./FreeRTOS/task.h"
 #include "./FreeRTOS/queue.h"
 #include "./FreeRTOS/semphr.h"
+#include "./drivers/pid.h"
 
 // A pointer to OSHANDLES is all that is needed for any file/task to access
 // Semaphores, task handles, queue handles etc...
@@ -17,12 +18,20 @@ typedef struct
 
 	struct {
 		xTaskHandle userInterface;
-		xTaskHandle continuous;
+		xTaskHandle flight_task;
 	}task;
 
 	struct {
 		xSemaphoreHandle SPI;  // spi lock
 	}lock;
+
+	struct {
+		PID_DATA pid_roll;
+		PID_DATA pid_pitch;
+		PID_DATA pid_yaw;
+	}flight_settings;
+
+
 }OSHANDLES;
 
 #endif /* COMMONDEFS_H_ */
