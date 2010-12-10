@@ -29,6 +29,13 @@ typedef struct
 		PID_DATA pid_roll;
 		PID_DATA pid_pitch;
 		PID_DATA pid_yaw;
+		//unsigned char flying_mode;
+		unsigned char armed;
+		unsigned char telem_mode;
+		unsigned int throttle_limit;
+		int tx_throttle, tx_yaw, tx_pitch, tx_roll;
+		unsigned int lastUpdatedCommands;
+		unsigned char please_update_sensors;
 	}flight_settings;
 
 

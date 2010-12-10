@@ -8,6 +8,10 @@
 #ifndef FLIGHT_TASK_H_
 #define FLIGHT_TASK_H_
 
+//flying_mode can be:
+#define ACROBATIC_MODE 0
+#define STABLE_MODE 1
+
 
 void flight_task(void *pvParameters);
 

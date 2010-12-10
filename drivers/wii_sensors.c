@@ -14,8 +14,10 @@
 unsigned char init_wii_sensors(){
 	unsigned char dummy[1] = "";
 
-	// cold-initialize wii motion+ with nunchuck attatched
-	if ( i2c_send_byte(0xA6, 0xF0, 0x55) && i2c_send_byte(0xA6, 0xFE, 0x05) )
+	// cold-initialize wii motion+ with nunchuck attached
+
+	//if ( i2c_send_byte(0xA6, 0xF0, 0x55) && i2c_send_byte(0xA6, 0xFE, 0x05) ) //(nunchuck & mw+) mode
+	if ( i2c_send_byte(0xA6, 0xFE, 0x04) && i2c_send_byte(0xA6, 0xFE, 0x05) ) //(mw+) mode
 	{
 		return 1;
 	}
@@ -31,9 +33,9 @@ unsigned char init_wii_sensors(){
 
 unsigned char zero_wii_sensors(SENSOR_DATA *zero_data){
 	unsigned char successful_reads = 0;
-	SENSOR_DATA vals;
+	SENSOR_DATA vals = {0};
+	*zero_data = vals; //zero the data.
 	SENSOR_DATA dummy_zero = { 0 };
-	//memset(zero_data, 0, sizeof(SENSOR_DATA)); //zero the data.
 
 	for (int i=0;i<15;i++)
 	{
@@ -49,6 +51,11 @@ unsigned char zero_wii_sensors(SENSOR_DATA *zero_data){
 	zero_data->yaw   = zero_data->yaw   / successful_reads;
 	zero_data->pitch = zero_data->pitch / successful_reads;
 	zero_data->roll  = zero_data->roll  / successful_reads;
+	if (successful_reads<1){
+		zero_data->yaw = 0;
+		zero_data->pitch = 0;
+		zero_data->roll = 0;
+	}
 	return successful_reads;
 }
 
@@ -75,5 +82,11 @@ unsigned char update_wii_data(SENSOR_DATA *vals, SENSOR_DATA *zer0){
 			return 2; //got nunchuck data successfully
 		}
 	}
+	vals->yaw = 0;
+	vals->pitch = 0;
+	vals->roll = 0;
+	vals->x = 0;
+	vals->y = 0;
+	vals->z = 0;
 	return 0; //data not received successfully.
 }

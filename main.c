@@ -36,7 +36,7 @@ int main (void)
 
 	cpuSetupHardware();          // Setup PLL, enable MAM etc.
 	watchdogDelayUs(20*1000);  // Some startup delay
-	uart0Init(38400, 256);       // 256 is size of Rx/Tx FIFO
+	uart0Init(115200, 256);       // 256 is size of Rx/Tx FIFO
 
 	// Use polling version of uart0 to do printf/rprintf before starting FreeRTOS
 	rprintf_devopen(uart0PutCharPolling);
@@ -47,11 +47,11 @@ int main (void)
 	rprintf_devopen(uart0PutChar);
 
 
-	i2c_init(400);
+	i2c_init(200);
 	//System.lock.SPI = xQueueCreateMutex(); initialize_SSPSPI(); diskio_initializeSPIMutex(&(System.lock.SPI));initialize_SdCardSignals();
 
 	xTaskCreate( uartUI, (signed char*)"userInterface", STACK_BYTES(1024*4), &System, PRIORITY_MEDIUM,  &System.task.userInterface );
-	xTaskCreate( flight_task, (signed char*)"flight_task", STACK_BYTES(1024*1), &System, PRIORITY_MEDIUM,  &System.task.flight_task );
+	xTaskCreate( flight_task, (signed char*)"flight_task", STACK_BYTES(1024*2), &System, PRIORITY_MEDIUM,  &System.task.flight_task );
 
 	rprintf("\n-- Starting FreeRTOS --\n");
 	vTaskStartScheduler();	// This function will not return.

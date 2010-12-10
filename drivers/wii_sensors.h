@@ -8,6 +8,8 @@
 #ifndef WII_SENSORS_H_
 #define WII_SENSORS_H_
 
+#define MAX_WII_SENSOR_POLLING_RATE 5
+
 typedef struct {
 	int roll, pitch, yaw;
 	int x, y, z;
