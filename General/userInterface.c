@@ -118,6 +118,8 @@ void uartUI(void *pvParameters)
 						osHandles->flight_settings.pid_yaw.i = values[7]/100;
 						osHandles->flight_settings.pid_yaw.d = values[8]/100;
 
+						rprintf("updated pids to(*100): %i,%i,%i,%i,%i,%i,%i,%i,%i",values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8]);
+
 						for (unsigned char i = packet[4]/2; i; i--){
 							pulse_single_motor(i%4,150);
 							vTaskDelay(50);

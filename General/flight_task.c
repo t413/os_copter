@@ -46,7 +46,7 @@ void flight_task(void *pvParameters)
 		else break; //successfully initialized and zeroed.
 	}
 
-	rprintf("pitch PID: %i %i %i\n",(int)osHandles->flight_settings.pid_yaw.p,(int)osHandles->flight_settings.pid_yaw.i,(int)osHandles->flight_settings.pid_yaw.d);
+	rprintf("yaw PID: %i %i %i\n",(int)osHandles->flight_settings.pid_yaw.p,(int)osHandles->flight_settings.pid_yaw.i,(int)osHandles->flight_settings.pid_yaw.d);
 
 	int pitch_integral = 0;
 	unsigned int loop_count = 0;

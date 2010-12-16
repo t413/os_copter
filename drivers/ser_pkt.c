@@ -62,14 +62,13 @@ void send_int16_packet(uint8_t pktID, uint8_t pktTYPE, int16_t in0,int16_t in1,i
 
 void send_some_int16s(uint8_t pktID, uint8_t pktTYPE, int16_t * values, uint8_t number){
 	uint8_t data[128/2] = ""; //max number of 8bit chars to send = 128
-	uint8_t * buf = data;	// copy the pointer
-
-	for(unsigned int i=0, j=0; j < number; j++){
-		buf[i++] = values[j];
-		buf[i++] = (values[j] >> 8);
+	unsigned int i=0;
+	for(unsigned int j=0; j < number; j++){
+		data[i++] = values[j];
+		data[i++] = (values[j] >> 8);
 	}
 
-	send_packet(pktID, pktTYPE, data, (buf-data) );		//buf-data is the length of the datastream
+	send_packet(pktID, pktTYPE, data, i );
 }
 
 
@@ -130,7 +129,8 @@ FourU16 decode_4xint16( uint8_t * buf ) {
 
 void decode_some_int16s( uint8_t * buf, int16_t * values, uint8_t number ) {
 	for(unsigned int i=0, j=0; j < number; ){
-		values[j++] = buf[i++] | (buf[i++] << 8);
+		values[j++] = buf[i] | (buf[i+1] << 8);
+		i += 2;
 	}
 }
 
