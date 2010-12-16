@@ -34,7 +34,7 @@ typedef struct
 		unsigned char telem_mode;
 		unsigned int throttle_limit;
 		int tx_throttle, tx_yaw, tx_pitch, tx_roll;
-		unsigned int lastUpdatedCommands;
+		unsigned int command_used_number;
 		unsigned char please_update_sensors;
 	}flight_settings;
 

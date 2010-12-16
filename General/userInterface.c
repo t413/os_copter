@@ -49,7 +49,7 @@ void uartUI(void *pvParameters)
 					osHandles->flight_settings.tx_yaw   =   (recieved.d2-1500)/20+1500;  //scale down this stick action.
 					osHandles->flight_settings.tx_throttle = recieved.d3;
 
-					osHandles->flight_settings.lastUpdatedCommands = xTaskGetTickCount();
+					osHandles->flight_settings.command_used_number = 0;
 
 					if (osHandles->flight_settings.tx_throttle < MIN_SAFETY) {
 						osHandles->flight_settings.pid_roll.error = 0; //zero the integral error
@@ -71,20 +71,57 @@ void uartUI(void *pvParameters)
 			{
 				switch (packet[3])
 				{
-					case 'X':{	//kill signal
+					case 'X':	//kill signal
+					{
 						osHandles->flight_settings.armed = 0;
 						write_motors(MIN_CONTROL, MIN_CONTROL, MIN_CONTROL, MIN_CONTROL);
 						break;
 					}
-					case 'z':{	// Zero sensors
+					case 'z':	// Zero sensors
+					{
 						if (! osHandles->flight_settings.armed)
 							osHandles->flight_settings.please_update_sensors = 1;
 						break;
 					}
-					case 'm':{	// pulse single motor
+					case 'm':	// pulse single motor
+					{
 						//FRONTMOTORPIN,REARMOTORPIN, LEFTMOTORPIN, RIGHTMOTORPIN
 						uint8_t whichm = *(uint8_t *) (packet+5);
 						pulse_single_motor(whichm,150);
+						break;
+					}
+					case 'p':// request for PID values
+					{
+						int16_t values[9] = {
+								osHandles->flight_settings.pid_pitch.p*100, osHandles->flight_settings.pid_pitch.i*100, osHandles->flight_settings.pid_pitch.d*100,
+								osHandles->flight_settings.pid_roll.p*100, osHandles->flight_settings.pid_roll.i*100, osHandles->flight_settings.pid_roll.d*100,
+								osHandles->flight_settings.pid_yaw.p*100, osHandles->flight_settings.pid_yaw.i*100, osHandles->flight_settings.pid_yaw.d*100
+						};
+						send_some_int16s(SETTINGS_COMM,SEND_PIDS,values,9);
+						pulse_single_motor(2,150);
+						vTaskDelay(100);
+						pulse_single_motor(3,150);
+						break;
+					}
+					case RECIEVE_PIDS:// update PID values
+					{
+						int16_t values[9] = {0};
+						decode_some_int16s(packet+5, values, packet[4]/2 ); //should be 9.
+
+						osHandles->flight_settings.pid_pitch.p = values[0]/100;
+						osHandles->flight_settings.pid_pitch.i = values[1]/100;
+						osHandles->flight_settings.pid_pitch.d = values[2]/100;
+						osHandles->flight_settings.pid_roll.p = values[3]/100;
+						osHandles->flight_settings.pid_roll.i = values[4]/100;
+						osHandles->flight_settings.pid_roll.d = values[5]/100;
+						osHandles->flight_settings.pid_yaw.p = values[6]/100;
+						osHandles->flight_settings.pid_yaw.i = values[7]/100;
+						osHandles->flight_settings.pid_yaw.d = values[8]/100;
+
+						for (unsigned char i = packet[4]/2; i; i--){
+							pulse_single_motor(i%4,150);
+							vTaskDelay(50);
+						}
 						break;
 					}
 					case 'r':{	//TEMPORARY!!! telemetry toggle

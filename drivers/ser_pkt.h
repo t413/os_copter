@@ -75,11 +75,14 @@ typedef struct {
 /*****************************************/
 /**********		declarations	**********/
 /*****************************************/
+void send_some_int16s(uint8_t pktID, uint8_t pktTYPE, int16_t * values, uint8_t number);
 void send_int16_packet(uint8_t,uint8_t,int16_t,int16_t,int16_t,int16_t);
 void send_float_packet(uint8_t,uint8_t,float,float);
 void send_byte_packet(uint8_t,uint8_t,uint8_t);
 
 uint8_t* getSerialPacket();
+
+void decode_some_int16s( uint8_t * buf, int16_t * values, uint8_t number );
 ACCtelem decode_acc_data( uint8_t *buf );
 FourU16 decode_4xint16( uint8_t *buf );
 void decode_4xint16_alt( uint8_t * buf, unsigned int* d0, unsigned int* d1, unsigned int* d2, unsigned int*d3);

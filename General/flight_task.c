@@ -25,9 +25,10 @@ void flight_task(void *pvParameters)
 	write_motors_zero();
 
 	memset(&(osHandles->flight_settings), 0, sizeof(osHandles->flight_settings));
-	osHandles->flight_settings.pid_roll.p = 6.5;
-	osHandles->flight_settings.pid_pitch.p = 6.5;
-	osHandles->flight_settings.pid_yaw.p = 6.5;
+	osHandles->flight_settings.pid_roll.p = 7.0;
+	osHandles->flight_settings.pid_pitch.p = 7.0;
+	osHandles->flight_settings.pid_yaw.p = 12.0;
+	osHandles->flight_settings.pid_yaw.i = 0.1;
 
 	osHandles->flight_settings.tx_throttle = 1000;
 	osHandles->flight_settings.tx_yaw = 1500;
@@ -73,6 +74,9 @@ void flight_task(void *pvParameters)
 					osHandles->flight_settings.tx_throttle + roll_offset + yaw_offset,  //left
 					osHandles->flight_settings.tx_throttle - roll_offset + yaw_offset   //right
 					);
+
+			//safety disarm if not updated command recently enough.
+			if (osHandles->flight_settings.command_used_number++ > 50) { osHandles->flight_settings.armed = 0; write_motors_zero(); }
 		}
 		else {
 			if (osHandles->flight_settings.please_update_sensors){ //allows the user interface task to zero the sensor values.
