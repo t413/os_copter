@@ -41,12 +41,12 @@ void flight_task(void *pvParameters)
 		vTaskDelay(500);
 		init_wii_sensors();
 		unsigned int sensors_averages = zero_wii_sensors(&zero_vals);
-		rprintf("read %i averages\n",sensors_averages);
+		if (osHandles->flight_settings.telem_mode) {rprintf("read %i averages\n",sensors_averages);}
 		if (sensors_averages < 1){ vTaskDelay(2000); }
 		else break; //successfully initialized and zeroed.
 	}
 
-	rprintf("yaw PID: %i %i %i\n",(int)osHandles->flight_settings.pid_yaw.p,(int)osHandles->flight_settings.pid_yaw.i,(int)osHandles->flight_settings.pid_yaw.d);
+	//rprintf("yaw PID: %i %i %i\n",(int)osHandles->flight_settings.pid_yaw.p,(int)osHandles->flight_settings.pid_yaw.i,(int)osHandles->flight_settings.pid_yaw.d);
 
 	int pitch_integral = 0;
 	unsigned int loop_count = 0;
@@ -83,7 +83,7 @@ void flight_task(void *pvParameters)
 				osHandles->flight_settings.please_update_sensors = 0;
 				zero_wii_sensors(&zero_vals);
 				pulse_motors(3, 200);
-				rprintf("zero-ed angles.\n");
+				if (osHandles->flight_settings.telem_mode) {rprintf("zero-ed angles.\n");}
 			}
 		}
 

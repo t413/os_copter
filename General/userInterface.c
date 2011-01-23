@@ -44,9 +44,9 @@ void uartUI(void *pvParameters)
 					FourU16 recieved = decode_4xint16(packet+5);
 					osHandles->flight_settings.tx_throttle = MINIMUM(osHandles->flight_settings.throttle_limit,osHandles->flight_settings.tx_throttle);
 
-					osHandles->flight_settings.tx_roll  =   (recieved.d0-1500)/20+1500;  //scale down this stick action.
-					osHandles->flight_settings.tx_pitch = (-(recieved.d1-1500))/20+1500;  //scale down this stick action.
-					osHandles->flight_settings.tx_yaw   =   (recieved.d2-1500)/20+1500;  //scale down this stick action.
+					osHandles->flight_settings.tx_roll  =   (recieved.d0-1500)/16+1500;  //scale down this stick action.
+					osHandles->flight_settings.tx_pitch = (-(recieved.d1-1500))/16+1500;  //scale down this stick action.
+					osHandles->flight_settings.tx_yaw   =   (recieved.d2-1500)/16+1500;  //scale down this stick action.
 					osHandles->flight_settings.tx_throttle = recieved.d3;
 
 					osHandles->flight_settings.command_used_number = 0;
@@ -59,12 +59,23 @@ void uartUI(void *pvParameters)
 						// enable flying (arm it) when yaw-> throttle==min.
 						if (recieved.d2 > MAX_SAFETY && osHandles->flight_settings.armed == 1) {
 							osHandles->flight_settings.armed = 3; //armed=3 means ready to fly
-							rprintf("armed\n");
+							if (osHandles->flight_settings.telem_mode) rprintf("armed\n");
 						}
 						//armed=1 means we've gotten one packet with yaw>MINCHECK
-						if (recieved.d2 > MIN_SAFETY) osHandles->flight_settings.armed |= 1;
+						if (recieved.d2 > MAX_SAFETY) osHandles->flight_settings.armed |= 1;
+
+						if (recieved.d2 < MIN_SAFETY) osHandles->flight_settings.armed = 0; //disarm when yaw
+
+						if ((recieved.d2 < MIN_SAFETY) && (recieved.d0 > MAX_SAFETY) && (recieved.d1 < MIN_SAFETY))
+							{ osHandles->flight_settings.please_update_sensors = 1; } //zero sensors.
 					}
-					//rprintf("got data! : r:%i p:%i y:%i t:%i\n",osHandles->flight_settings.tx_roll, osHandles->flight_settings.tx_pitch, osHandles->flight_settings.tx_yaw, osHandles->flight_settings.tx_throttle);
+					if (osHandles->flight_settings.telem_mode) {
+						rprintf("got data! : r:%i p:%i y:%i t:%i\n",
+								osHandles->flight_settings.tx_roll,
+								osHandles->flight_settings.tx_pitch,
+								osHandles->flight_settings.tx_yaw,
+								osHandles->flight_settings.tx_throttle);
+					}
 				}
 			}
 			else if (packet[2] == SETTINGS_COMM)
@@ -90,43 +101,60 @@ void uartUI(void *pvParameters)
 						pulse_single_motor(whichm,150);
 						break;
 					}
-					case 'p':// request for PID values
-					{
-						int16_t values[9] = {
-								osHandles->flight_settings.pid_pitch.p*100, osHandles->flight_settings.pid_pitch.i*100, osHandles->flight_settings.pid_pitch.d*100,
-								osHandles->flight_settings.pid_roll.p*100, osHandles->flight_settings.pid_roll.i*100, osHandles->flight_settings.pid_roll.d*100,
-								osHandles->flight_settings.pid_yaw.p*100, osHandles->flight_settings.pid_yaw.i*100, osHandles->flight_settings.pid_yaw.d*100
-						};
-						send_some_int16s(SETTINGS_COMM,SEND_PIDS,values,9);
-						pulse_single_motor(2,150);
-						vTaskDelay(100);
-						pulse_single_motor(3,150);
-						break;
-					}
-					case RECIEVE_PIDS:// update PID values
+					case REMOTE_2_QUAD_PIDS:// update PID values
 					{
 						int16_t values[9] = {0};
 						decode_some_int16s(packet+5, values, packet[4]/2 ); //should be 9.
 
-						osHandles->flight_settings.pid_pitch.p = values[0]/100;
-						osHandles->flight_settings.pid_pitch.i = values[1]/100;
-						osHandles->flight_settings.pid_pitch.d = values[2]/100;
-						osHandles->flight_settings.pid_roll.p = values[3]/100;
-						osHandles->flight_settings.pid_roll.i = values[4]/100;
-						osHandles->flight_settings.pid_roll.d = values[5]/100;
-						osHandles->flight_settings.pid_yaw.p = values[6]/100;
-						osHandles->flight_settings.pid_yaw.i = values[7]/100;
-						osHandles->flight_settings.pid_yaw.d = values[8]/100;
+						osHandles->flight_settings.pid_pitch.p = (float)values[0]/10;
+						osHandles->flight_settings.pid_pitch.i = (float)values[1]/100; //PID.I was too sensitive, so /10
+						osHandles->flight_settings.pid_pitch.d = (float)values[2]/10;
+						osHandles->flight_settings.pid_roll.p = (float)values[3]/10;
+						osHandles->flight_settings.pid_roll.i = (float)values[4]/100; //PID.I was too sensitive so /10
+						osHandles->flight_settings.pid_roll.d = (float)values[5]/10;
+						osHandles->flight_settings.pid_yaw.p = (float)values[6]/10;
+						osHandles->flight_settings.pid_yaw.i = (float)values[7]/10;
+						osHandles->flight_settings.pid_yaw.d = (float)values[8]/10;
 
-						rprintf("updated pids to(*100): %i,%i,%i,%i,%i,%i,%i,%i,%i",values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8]);
+						if (osHandles->flight_settings.telem_mode) {
+							rprintf("updated pids to(*10): %i,%i,%i,%i,%i,%i,%i,%i,%i",
+									osHandles->flight_settings.pid_pitch.p*10,
+									osHandles->flight_settings.pid_pitch.i*10*10,
+									osHandles->flight_settings.pid_pitch.d*10,
+									osHandles->flight_settings.pid_roll.p*10,
+									osHandles->flight_settings.pid_roll.i*10*10,
+									osHandles->flight_settings.pid_roll.d*10,
+									osHandles->flight_settings.pid_yaw.p*10,
+									osHandles->flight_settings.pid_yaw.i*10,
+									osHandles->flight_settings.pid_yaw.d*10
+									       );
+						}
 
-						for (unsigned char i = packet[4]/2; i; i--){
-							pulse_single_motor(i%4,150);
-							vTaskDelay(50);
+						if (! osHandles->flight_settings.armed) {  // motor feedback if not armed
+							for (unsigned char i = 0; i<4; i++){
+								pulse_single_motor(i%4,150);
+								vTaskDelay(50);
+							}
+						}
+						break; // <- NO BREAK, I want it to send the PIDs back.
+					case 'p':// request for PID values
+					{
+						int16_t values[9] = {
+								osHandles->flight_settings.pid_pitch.p*10, osHandles->flight_settings.pid_pitch.i*10*10, osHandles->flight_settings.pid_pitch.d*10,
+								osHandles->flight_settings.pid_roll.p*10, osHandles->flight_settings.pid_roll.i*10*10, osHandles->flight_settings.pid_roll.d*10,
+								osHandles->flight_settings.pid_yaw.p*10, osHandles->flight_settings.pid_yaw.i*10, osHandles->flight_settings.pid_yaw.d*10
+						};
+						send_some_int16s(SETTINGS_COMM,QUAD_2_REMOTE_PIDS,values,9);
+						if (! osHandles->flight_settings.armed) {  // motor feedback if not armed
+							for (unsigned char i = 0; i<4; i++){
+								pulse_single_motor(i%4,150);
+								vTaskDelay(50);
+							}
 						}
 						break;
 					}
-					case 'r':{	//TEMPORARY!!! telemetry toggle
+					}
+					case 'r':{	//TEMPORARY!!! telemetry toggle (for debug mode)
 						if (! osHandles->flight_settings.armed)
 							pulse_single_motor(0,50);
 						osHandles->flight_settings.telem_mode = !osHandles->flight_settings.telem_mode;
