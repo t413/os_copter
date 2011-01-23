@@ -64,7 +64,7 @@ void uartUI(void *pvParameters)
 						//armed=1 means we've gotten one packet with yaw>MINCHECK
 						if (recieved.d2 > MAX_SAFETY) osHandles->flight_settings.armed |= 1;
 
-						if (recieved.d2 < MIN_SAFETY) osHandles->flight_settings.armed = 0; //disarm when yaw
+						if (recieved.d2 < MIN_SAFETY) { osHandles->flight_settings.armed = 0; write_motors_zero(); } //disarm when yaw
 
 						if ((recieved.d2 < MIN_SAFETY) && (recieved.d0 > MAX_SAFETY) && (recieved.d1 < MIN_SAFETY))
 							{ osHandles->flight_settings.please_update_sensors = 1; } //zero sensors.
@@ -85,7 +85,7 @@ void uartUI(void *pvParameters)
 					case 'X':	//kill signal
 					{
 						osHandles->flight_settings.armed = 0;
-						write_motors(MIN_CONTROL, MIN_CONTROL, MIN_CONTROL, MIN_CONTROL);
+						write_motors_zero();
 						break;
 					}
 					case 'z':	// Zero sensors
