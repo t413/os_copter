@@ -54,8 +54,8 @@
 	#define MOTOR_OUTPUT	2
 	#define DEBUG_OUTPUT	3
 #define SETTINGS_COMM	3
-	#define REMOTE_2_QUAD_PIDS	0
-	#define QUAD_2_REMOTE_PIDS	1
+	#define REMOTE_2_QUAD_SETTINGS	0
+	#define QUAD_2_REMOTE_SETTINGS	1
 
 // packet types
 

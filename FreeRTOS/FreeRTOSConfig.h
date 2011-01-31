@@ -88,7 +88,7 @@
 #define configTOTAL_HEAP_SIZE			( ( size_t ) ( 24 * 1024 ) ) /* Only needed when using heap_1.c and heap_2.c */
 #define STACK_BYTES(x)					((x)/4)	/* freeRTOS allocates 4-times the size given due to 32-bit ARM */
 #define MS_PER_TICK()					( 1000 / configTICK_RATE_HZ)
-#define OS_MS(x)						( x / MS_PER_TICK() )
+#define OS_MS(x)						( x * configTICK_RATE_HZ / 1000 )
 
 #define configMAX_TASK_NAME_LEN				16	/* Maximum characters to describe a task */
 #define configUSE_TRACE_FACILITY			0	/* This is for offline traces, usually run-time status is better option */

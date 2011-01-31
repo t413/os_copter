@@ -12,6 +12,7 @@
 //task files
 #include "./general/userInterface.h"	// User interface functions to interact through UART
 #include "./general/flight_task.h"	// User interface functions to interact through UART
+#include "./general/led_task.h"	// User interface functions to interact through UART
 
 
 /* INTERRUPT VECTORS:
@@ -21,7 +22,8 @@
  * 3:    Not Used
  * 4:    Not Used
  * 5:    i2c interrupt
- * 6-16: Not Used
+ * 6:    PWM-input from sonar ranger
+ * 7-16: Not Used
  */
 
 /* Resources Used
@@ -52,6 +54,7 @@ int main (void)
 
 	xTaskCreate( uartUI, (signed char*)"userInterface", STACK_BYTES(1024*4), &System, PRIORITY_MEDIUM,  &System.task.userInterface );
 	xTaskCreate( flight_task, (signed char*)"flight_task", STACK_BYTES(1024*2), &System, PRIORITY_MEDIUM,  &System.task.flight_task );
+	xTaskCreate( led_task, (signed char*)"flight_task", STACK_BYTES(128*2), &System, PRIORITY_LOW,  &System.task.led_task );
 
 	rprintf("\n-- Starting FreeRTOS --\n");
 	vTaskStartScheduler();	// This function will not return.

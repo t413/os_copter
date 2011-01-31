@@ -8,7 +8,7 @@
 #ifndef WII_SENSORS_H_
 #define WII_SENSORS_H_
 
-#define MAX_WII_SENSOR_POLLING_RATE 5
+#define MAX_WII_SENSOR_POLLING_RATE (OS_MS(5)) //5ms
 
 typedef struct {
 	int roll, pitch, yaw;
