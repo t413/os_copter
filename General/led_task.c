@@ -26,23 +26,24 @@ void led_task(void *pvParameters)
 
 	for (unsigned int i = 0; ;i++)
 	{
-		if (!(osHandles->flight_settings.led_mode)) { IOCLR0 = LED_PIN; vTaskDelay(OS_MS(1000)); } //LEDs off.
 
-		else if (osHandles->flight_control.armed == 3 && (osHandles->flight_settings.led_mode & 1)){  //armed
+		if (osHandles->flight_control.armed == 3 && (osHandles->flight_settings.led_mode & 1)){  //armed
 			IOSET0 = LED_PIN;
 			vTaskDelay(OS_MS(100));
 		}
 		else if (osHandles->flight_control.command_used_number < 75 && (osHandles->flight_settings.led_mode & 2)){  //transmitting, not armed
-			if (!(i%6)) IOSET0 = LED_PIN;
-			else IOCLR0 = LED_PIN;
+			if (!(i%6)) { IOSET0 = LED_PIN; }
+			else { IOCLR0 = LED_PIN; }
 		}
 		else if (osHandles->flight_settings.led_mode & 4) { //standby
 			if (!((i/500)%3)){ //every four seconds
-				if (!(i%4)) IOSET0 = LED_PIN; //go on at 1/8th brightness
-				else IOCLR0 = LED_PIN;
+				if (!(i%4)) { IOSET0 = LED_PIN; } //go on at 1/8th brightness
+				else { IOCLR0 = LED_PIN; }
 			}
-			else IOCLR0 = LED_PIN;
+			else { IOCLR0 = LED_PIN; }
 		}
+		else { IOCLR0 = LED_PIN; vTaskDelay(OS_MS(1000)); } //LEDs off.
+
 		vTaskDelay(1);
 		//unsigned int last_ms = xTaskGetTickCount();
 	}

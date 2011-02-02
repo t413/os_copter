@@ -11,8 +11,8 @@
 #define MAX_WII_SENSOR_POLLING_RATE (OS_MS(5)) //5ms
 
 typedef struct {
-	int roll, pitch, yaw;
-	int x, y, z;
+	signed short roll, pitch, yaw;
+	signed short x, y, z;
 }SENSOR_DATA;
 
 unsigned char init_wii_sensors();

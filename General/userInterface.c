@@ -58,10 +58,9 @@ void uartUI(void *pvParameters)
 				}
 				else if (packet[3] == FULL_REMOTE){
 					FourU16 recieved = decode_4xint16(packet+5);
-
-					osHandles->flight_control.tx_roll  =   (recieved.d0-1500)/16+1500;  //scale down this stick action.
-					osHandles->flight_control.tx_pitch = (-(recieved.d1-1500))/16+1500;  //scale down this stick action.
-					osHandles->flight_control.tx_yaw   =   (recieved.d2-1500)/16+1500;  //scale down this stick action.
+					osHandles->flight_control.tx_roll  =   (recieved.d0-1500)*4/osHandles->flight_settings.pitch_roll_tx_scale+1500;
+					osHandles->flight_control.tx_pitch = -(recieved.d1-1500)*4/osHandles->flight_settings.pitch_roll_tx_scale+1500;
+					osHandles->flight_control.tx_yaw   =   (recieved.d2-1500)*4/osHandles->flight_settings.yaw_tx_scale+1500;
 					osHandles->flight_control.tx_throttle = recieved.d3;
 
 					osHandles->flight_control.command_used_number = 0;
@@ -131,22 +130,19 @@ void uartUI(void *pvParameters)
 						osHandles->flight_settings.pid_yaw->i = values[7];
 						osHandles->flight_settings.pid_yaw->d = values[8];
 
-						osHandles->flight_settings.flying_mode = values[9]>>8;
-						osHandles->flight_settings.led_mode = values[9] & 0xFF;
+						osHandles->flight_settings.pitch_roll_tx_scale = values[9];
+						osHandles->flight_settings.yaw_tx_scale = values[10];
+
+						osHandles->flight_settings.flying_mode = values[11];
+						osHandles->flight_settings.led_mode = values[12];
 
 						if (osHandles->flight_control.telem_mode) {
 							rprintf("\n updated pids to(*10): %i,%i,%i,%i,%i,%i,%i,%i,%i",
-									(osHandles->flight_settings.pid_pitch->p),
-									(osHandles->flight_settings.pid_pitch->i),
-									(osHandles->flight_settings.pid_pitch->d),
-									(osHandles->flight_settings.pid_roll->p),
-									(osHandles->flight_settings.pid_roll->i),
-									(osHandles->flight_settings.pid_roll->d),
-									(osHandles->flight_settings.pid_yaw->p),
-									(osHandles->flight_settings.pid_yaw->i),
-									(osHandles->flight_settings.pid_yaw->d)
-									       );
-							rprintf("\nflying_mode=%i led_mode=%i \n\n",osHandles->flight_settings.flying_mode, osHandles->flight_settings.led_mode );
+									osHandles->flight_settings.pid_pitch->p, osHandles->flight_settings.pid_pitch->i, osHandles->flight_settings.pid_pitch->d,
+									osHandles->flight_settings.pid_roll->p, osHandles->flight_settings.pid_roll->i, osHandles->flight_settings.pid_roll->d,
+									osHandles->flight_settings.pid_yaw->p, osHandles->flight_settings.pid_yaw->i, osHandles->flight_settings.pid_yaw->d );
+							rprintf("\nflying_mode=%i led_mode=%i xy-scale:%i,yaw:%i\n\n",osHandles->flight_settings.flying_mode, osHandles->flight_settings.led_mode,
+									osHandles->flight_settings.pitch_roll_tx_scale, osHandles->flight_settings.yaw_tx_scale);
 						}
 
 						if (! osHandles->flight_control.armed) {  // motor feedback if not armed
@@ -162,7 +158,10 @@ void uartUI(void *pvParameters)
 								osHandles->flight_settings.pid_pitch->p, osHandles->flight_settings.pid_pitch->i, osHandles->flight_settings.pid_pitch->d,
 								osHandles->flight_settings.pid_roll->p, osHandles->flight_settings.pid_roll->i, osHandles->flight_settings.pid_roll->d,
 								osHandles->flight_settings.pid_yaw->p, osHandles->flight_settings.pid_yaw->i, osHandles->flight_settings.pid_yaw->d,
-								(osHandles->flight_settings.flying_mode<<8) + osHandles->flight_settings.led_mode
+								osHandles->flight_settings.pitch_roll_tx_scale,
+								osHandles->flight_settings.yaw_tx_scale,
+								osHandles->flight_settings.flying_mode,
+								osHandles->flight_settings.led_mode
 						};
 						send_some_int16s(SETTINGS_COMM,QUAD_2_REMOTE_SETTINGS,values, sizeof(values));
 						break;

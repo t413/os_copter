@@ -38,6 +38,8 @@ void flight_task(void *pvParameters)
 	osHandles->flight_control.tx_yaw = 1500;
 	osHandles->flight_control.tx_pitch = 1500;
 	osHandles->flight_control.tx_roll = 1500;
+	osHandles->flight_settings.pitch_roll_tx_scale = 16;
+	osHandles->flight_settings.yaw_tx_scale = 16;
 
 	SENSOR_DATA zero_vals = { 0 };
 	vTaskDelay(OS_MS(500));
@@ -58,9 +60,9 @@ void flight_task(void *pvParameters)
 			//pitch_integral += sensor_vals.pitch*(this_ms-last_ms); //deg/s * ms = degrees*1000
 			//last_ms = this_ms;
 
-			pitch_offset = calculate_pid((sensor_vals.pitch)/20+1500, osHandles->flight_control.tx_pitch, &pid_pitch);  //TODO: get rid of the /20, reduces accuracy.
-			roll_offset = calculate_pid((sensor_vals.roll)/20+1500, osHandles->flight_control.tx_roll, &pid_roll);
-			yaw_offset = calculate_pid((sensor_vals.yaw)/20+1500, osHandles->flight_control.tx_yaw, &pid_yaw);
+			pitch_offset = calculate_pid( sensor_vals.pitch+1500, osHandles->flight_control.tx_pitch, &pid_pitch);
+			roll_offset  = calculate_pid( sensor_vals.roll+1500,  osHandles->flight_control.tx_roll, &pid_roll);
+			yaw_offset   = calculate_pid( sensor_vals.yaw+1500,   osHandles->flight_control.tx_yaw, &pid_yaw);
 		}
 		//osHandles->flight_control.tx_throttle;
 		if (osHandles->flight_control.armed == 3){
@@ -75,10 +77,10 @@ void flight_task(void *pvParameters)
 			else if (osHandles->flight_settings.flying_mode == X_MODE){
 			// Front = Front/Right, Back = Left/Rear, Left = Front/Left, Right = Right/Rear
 				write_motors(
-					osHandles->flight_control.tx_throttle + pitch_offset - roll_offset - yaw_offset, //front
-					osHandles->flight_control.tx_throttle - pitch_offset + roll_offset - yaw_offset, //back
-					osHandles->flight_control.tx_throttle - pitch_offset - roll_offset + yaw_offset,  //left
-					osHandles->flight_control.tx_throttle + pitch_offset + roll_offset + yaw_offset   //right
+					osHandles->flight_control.tx_throttle + pitch_offset + roll_offset + yaw_offset, //front
+					osHandles->flight_control.tx_throttle - pitch_offset - roll_offset + yaw_offset, //back
+					osHandles->flight_control.tx_throttle - pitch_offset + roll_offset - yaw_offset,  //left
+					osHandles->flight_control.tx_throttle + pitch_offset - roll_offset - yaw_offset   //right
 					);
 			}
 			//safety disarm if not updated command recently enough.

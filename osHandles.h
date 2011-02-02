@@ -44,6 +44,8 @@ typedef struct
 		PID_DATA * pid_yaw;
 		uint8_t flying_mode; //X_MODE or PLUS_MODE
 		uint8_t led_mode;
+		uint16_t pitch_roll_tx_scale;
+		uint16_t yaw_tx_scale;
 	}flight_settings;
 
 	struct {
